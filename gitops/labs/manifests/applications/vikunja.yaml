@@ -6,29 +6,26 @@ metadata:
 spec:
   project: default
 
-  source:
-    repoURL: oci://ghcr.io/go-vikunja/helm-chart/vikunja
-    targetRevision: v2.0.2
-    path: .
-    helm:
-      valuesObject:
-        vikunja:
-          ingress:
-            main:
-              enabled: false   
-          persistence:
+source:
+  repoURL: oci://ghcr.io/go-vikunja/helm-chart
+  chart: vikunja
+  targetRevision: v2.0.2
+  helm:
+    values: |
+      vikunja:
+        ingress:
+          main:
+            enabled: false
+        configMaps:
+          config:
+            enabled: true
             data:
-              enabled: true
-              size: 2Gi
-          configMaps:
-            config:
-              enabled: true
-              data:
-                config.yml:
-                  service:
-                    enableregistration: false
-                  files:
-                    maxsize: "50MB"
+              config.yml: |
+                service:
+                  publicurl: "http://localhost:8082"
+                  enableregistration: false
+                files:
+                  maxsize: "50MB"
 
   destination:
     server: https://kubernetes.default.svc
