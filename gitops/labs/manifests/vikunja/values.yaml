@@ -1,0 +1,15 @@
+vikunja:
+  ingress:
+    main:
+      enabled: false
+
+  configMaps:
+    config:
+      enabled: true
+      data:
+        config.yml: |
+          service:
+            publicurl: "http://localhost:8082"
+            enableregistration: true
+          files:
+            maxsize: "50MB"

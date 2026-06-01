@@ -1,0 +1,167 @@
+﻿---
+# Source: vikunja/templates/vikunja.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: vikunja-config
+  labels:
+    app.kubernetes.io/instance: vikunja
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: vikunja
+    app.kubernetes.io/version: 1.0.0
+    helm.sh/chart: vikunja-v2.0.2
+data:
+  config.yml: |
+    service:
+      publicurl: "http://localhost:8082"
+      enableregistration: true
+    files:
+      maxsize: "50MB"
+
+
+---
+# Source: vikunja/templates/vikunja.yaml
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: vikunja-data
+  labels:
+    app.kubernetes.io/instance: vikunja
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: vikunja
+    app.kubernetes.io/version: 1.0.0
+    helm.sh/chart: vikunja-v2.0.2
+  annotations:
+spec:
+  accessModes:
+    - "ReadWriteOnce"
+  resources:
+    requests:
+      storage: "2Gi"
+---
+# Source: vikunja/templates/vikunja.yaml
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: vikunja-database
+  labels:
+    app.kubernetes.io/instance: vikunja
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: vikunja
+    app.kubernetes.io/version: 1.0.0
+    helm.sh/chart: vikunja-v2.0.2
+  annotations:
+spec:
+  accessModes:
+    - "ReadWriteOnce"
+  resources:
+    requests:
+      storage: "2Gi"
+---
+# Source: vikunja/templates/vikunja.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: vikunja
+  labels:
+    app.kubernetes.io/service: vikunja
+    app.kubernetes.io/instance: vikunja
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: vikunja
+    app.kubernetes.io/version: 1.0.0
+    helm.sh/chart: vikunja-v2.0.2
+  annotations:
+spec:
+  type: ClusterIP
+  ports:
+    - port: 3456
+      targetPort: http
+      protocol: TCP
+      name: http
+  selector:
+    app.kubernetes.io/instance: vikunja
+    app.kubernetes.io/name: vikunja
+---
+# Source: vikunja/templates/vikunja.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: vikunja
+  labels:
+    app.kubernetes.io/instance: vikunja
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: vikunja
+    app.kubernetes.io/version: 1.0.0
+    helm.sh/chart: vikunja-v2.0.2
+spec:
+  revisionHistoryLimit: 3
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: vikunja
+      app.kubernetes.io/instance: vikunja
+  template:
+    metadata:
+      annotations:
+        
+        checksum/config: 7acf7185aeb379cad4763fab845d35dbf0aefc99bcf71d4ce7c14e05bde93480
+      labels:
+        app.kubernetes.io/name: vikunja
+        app.kubernetes.io/instance: vikunja
+    spec:
+      
+      serviceAccountName: default
+      automountServiceAccountToken: true
+      securityContext:
+        fsGroup: 1000
+      dnsPolicy: ClusterFirst
+      enableServiceLinks: false
+      containers:
+        - name: vikunja
+          image: vikunja/vikunja:1.0.0
+          imagePullPolicy: 
+          env:
+            - name: VIKUNJA_DATABASE_PATH
+              value: /db/vikunja.db
+            - name: VIKUNJA_DATABASE_TYPE
+              value: sqlite
+          ports:
+            - name: http
+              containerPort: 3456
+              protocol: TCP
+          volumeMounts:
+            - name: config
+              mountPath: /etc/vikunja/config.yml
+              subPath: config.yml
+            - name: data
+              mountPath: /app/vikunja/files
+            - name: database
+              mountPath: /db
+          livenessProbe:
+            failureThreshold: 3
+            httpGet:
+              path: /api/v1/info
+              port: http
+            initialDelaySeconds: 0
+            periodSeconds: 10
+            timeoutSeconds: 1
+          readinessProbe:
+            failureThreshold: 3
+            httpGet:
+              path: /api/v1/info
+              port: http
+            initialDelaySeconds: 0
+            periodSeconds: 10
+            timeoutSeconds: 1
+      volumes:
+        - name: config
+          configMap:
+            name: vikunja-config
+        - name: data
+          persistentVolumeClaim:
+            claimName: vikunja-data
+        - name: database
+          persistentVolumeClaim:
+            claimName: vikunja-database

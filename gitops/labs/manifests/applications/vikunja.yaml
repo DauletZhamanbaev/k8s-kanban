@@ -5,32 +5,15 @@ metadata:
   namespace: argocd
 spec:
   project: default
-
-source:
-  repoURL: oci://ghcr.io/go-vikunja/helm-chart
-  chart: vikunja
-  targetRevision: v2.0.2
-  helm:
-    values: |
-      vikunja:
-        ingress:
-          main:
-            enabled: false
-        configMaps:
-          config:
-            enabled: true
-            data:
-              config.yml: |
-                service:
-                  publicurl: "http://localhost:8082"
-                  enableregistration: false
-                files:
-                  maxsize: "50MB"
-
+  source:
+    repoURL: https://github.com/DauletZhamanbaev/k8s-kanban.git
+    targetRevision: HEAD
+    path: gitops/labs/manifests/vikunja
+    directory:
+      recurse: true
   destination:
     server: https://kubernetes.default.svc
     namespace: vikunja
-
   syncPolicy:
     automated:
       prune: true
